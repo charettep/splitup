@@ -355,29 +355,13 @@ Return the data in this exact JSON format:
       const owedP = parseFloat(line.owedPhilippe);
       const owedE = parseFloat(line.owedEx);
       
-      // Determine which table based on source type and paid by
-      if (line.sourceType === "expense") {
-        const expense = await storage.getExpense(line.sourceId);
-        if (expense) {
-          if (expense.paidBy === "PHILIPPE") {
-            // Philippe paid, so Ex owes her share to Philippe
-            sheOwesPhilippe.push(line);
-          } else {
-            // Ex paid, so Philippe owes his share to Ex
-            philippeOwesHer.push(line);
-          }
-        }
-      } else if (line.sourceType === "asset") {
-        const asset = await storage.getAsset(line.sourceId);
-        if (asset && asset.keptBy) {
-          if (asset.keptBy === "EX") {
-            // Ex keeps the asset, so she owes Philippe the buyback amount
-            sheOwesPhilippe.push(line);
-          } else {
-            // Philippe keeps the asset, so he owes Ex the buyback amount
-            philippeOwesHer.push(line);
-          }
-        }
+      // Group based on debt values (new debt semantic)
+      // owedPhilippe > 0 means debt TO Philippe (She owes him)
+      // owedEx > 0 means debt TO Ex (He owes her)
+      if (owedP > 0) {
+        sheOwesPhilippe.push(line);
+      } else if (owedE > 0) {
+        philippeOwesHer.push(line);
       }
     }
     
@@ -454,27 +438,11 @@ Return the data in this exact JSON format:
       let data: any[] = [];
       
       if (type === "she-owes") {
-        for (const line of lines) {
-          const expense = line.sourceType === "expense" ? await storage.getExpense(line.sourceId) : null;
-          if (expense && expense.paidBy === "PHILIPPE") {
-            data.push(line);
-          }
-          const asset = line.sourceType === "asset" ? await storage.getAsset(line.sourceId) : null;
-          if (asset && asset.keptBy === "EX") {
-            data.push(line);
-          }
-        }
+        // Export lines where owedPhilippe > 0 (debts TO Philippe)
+        data = lines.filter(line => parseFloat(line.owedPhilippe) > 0);
       } else if (type === "philippe-owes") {
-        for (const line of lines) {
-          const expense = line.sourceType === "expense" ? await storage.getExpense(line.sourceId) : null;
-          if (expense && expense.paidBy === "EX") {
-            data.push(line);
-          }
-          const asset = line.sourceType === "asset" ? await storage.getAsset(line.sourceId) : null;
-          if (asset && asset.keptBy === "PHILIPPE") {
-            data.push(line);
-          }
-        }
+        // Export lines where owedEx > 0 (debts TO Ex)
+        data = lines.filter(line => parseFloat(line.owedEx) > 0);
       } else {
         data = lines;
       }
