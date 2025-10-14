@@ -105,7 +105,7 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Date</FormLabel>
+              <FormLabel>Date (yyyy/mm/dd)</FormLabel>
               <FormControl>
                 <Input
                   type="date"

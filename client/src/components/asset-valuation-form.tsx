@@ -148,7 +148,7 @@ export function AssetValuationForm({ asset, onSuccess }: AssetValuationFormProps
             name="valuationDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Valuation Date</FormLabel>
+                <FormLabel>Valuation Date (yyyy/mm/dd)</FormLabel>
                 <FormControl>
                   <Input
                     type="date"

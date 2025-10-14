@@ -111,11 +111,11 @@ export default function LedgerPage() {
           </TableHeader>
           <TableBody>
             {lines.map((line) => {
-              // For "She Owes Philippe": show Ex's share (owedEx)
-              // For "Philippe Owes Her": show Philippe's share (owedPhilippe)
+              // owedPhilippe = amount owed TO Philippe
+              // owedEx = amount owed TO Ex
               const owedAmount = showOwedPhilippe
-                ? parseFloat(line.owedEx)
-                : parseFloat(line.owedPhilippe);
+                ? parseFloat(line.owedPhilippe)
+                : parseFloat(line.owedEx);
 
               return (
                 <TableRow

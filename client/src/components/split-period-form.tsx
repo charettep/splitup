@@ -81,7 +81,7 @@ export function SplitPeriodForm({ period, onSuccess }: SplitPeriodFormProps) {
             name="startDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Start Date</FormLabel>
+                <FormLabel>Start Date (yyyy/mm/dd)</FormLabel>
                 <FormControl>
                   <Input
                     type="date"
@@ -98,7 +98,7 @@ export function SplitPeriodForm({ period, onSuccess }: SplitPeriodFormProps) {
             name="endDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>End Date</FormLabel>
+                <FormLabel>End Date (yyyy/mm/dd)</FormLabel>
                 <FormControl>
                   <Input
                     type="date"

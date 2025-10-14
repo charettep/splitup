@@ -124,7 +124,7 @@ export function AssetForm({ asset, onSuccess }: AssetFormProps) {
             name="purchaseDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Purchase Date</FormLabel>
+                <FormLabel>Purchase Date (yyyy/mm/dd)</FormLabel>
                 <FormControl>
                   <Input
                     type="date"

@@ -52,6 +52,7 @@ function findSplitPeriod(date: string, periods: SplitPeriod[]): SplitPeriod | nu
 }
 
 // Calculate owed amounts for expense
+// Returns debts: owedPhilippe = amount owed TO Philippe, owedEx = amount owed TO Ex
 function calculateExpenseOwed(expense: Expense, periods: SplitPeriod[]) {
   let philippePct = 50;
   let exPct = 50;
@@ -68,10 +69,17 @@ function calculateExpenseOwed(expense: Expense, periods: SplitPeriod[]) {
   }
   
   const total = parseFloat(expense.totalAmount);
-  const owedPhilippe = bankersRound(total * (philippePct / 100));
-  const owedEx = total - owedPhilippe; // Ensure invariant
+  const philippeShare = bankersRound(total * (philippePct / 100));
+  const exShare = total - philippeShare; // Ensure invariant
   
-  return { owedPhilippe, owedEx };
+  // Calculate debts based on who paid
+  if (expense.paidBy === "PHILIPPE") {
+    // Philippe paid, so Ex owes him her share
+    return { owedPhilippe: exShare, owedEx: 0 };
+  } else {
+    // Ex paid, so Philippe owes her his share
+    return { owedPhilippe: 0, owedEx: philippeShare };
+  }
 }
 
 // Calculate buyback for asset
@@ -120,8 +128,7 @@ async function recalculateLedger() {
     
     const { owedPhilippe, owedEx } = calculateExpenseOwed(expense, periods);
     
-    // Ledger logic: Record what each person's share is (not who owes whom yet)
-    // The frontend will determine who owes whom based on who paid
+    // Ledger logic: owedPhilippe = amount owed TO Philippe, owedEx = amount owed TO Ex
     const description = `${expense.description} (${expense.paidBy === "PHILIPPE" ? "Philippe" : "Ex"} paid)`;
     
     await storage.createOwedLine({
