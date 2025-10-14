@@ -139,12 +139,19 @@ client/src/
 - ✅ Integrated OpenAI Vision for OCR receipt processing
 - ✅ Added object storage for receipt attachments
 - ✅ Implemented CSV import/export functionality
-- ✅ Fixed critical bugs:
-  - Corrected ledger direction (payer vs. owee logic)
-  - Fixed asset valuation persistence before recalculation
-  - Completed CSV import endpoint implementation
+- ✅ **Date Formatting Standardization:**
+  - All dates display as yyyy/mm/dd with slashes across entire app
+  - Added "(yyyy/mm/dd)" format guidance to all date input labels
+  - HTML5 date inputs use yyyy-MM-dd format (browser standard)
+- ✅ **Ledger Refactoring - Debt-Based Grouping:**
+  - Changed ledger grouping from paidBy/keptBy-based to debt-value-based (robust)
+  - Summary calculation now sums debt fields directly
+  - CSV export updated to use debt-based filtering
+  - Fixed summary totals showing $0 bug
+  - All ledger logic now consistently uses debt semantic (owedPhilippe = debt TO Philippe, owedEx = debt TO Ex)
 - ✅ All TypeScript LSP errors resolved
-- ✅ Architect review passed with all critical issues addressed
+- ✅ Comprehensive E2E testing passed with all calculations verified
+- ✅ Architect review passed - robust and maintainable implementation
 
 ## Environment Variables Required
 - `OPENAI_API_KEY` - For OCR extraction
