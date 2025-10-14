@@ -382,33 +382,14 @@ Return the data in this exact JSON format:
     }
     
     // Calculate summary
+    // With new debt semantic: owedPhilippe = debt TO Philippe, owedEx = debt TO Ex
     const totalSheOwes = sheOwesPhilippe
       .filter((l) => !l.paidStatus)
-      .reduce((sum, l) => {
-        const owedE = parseFloat(l.owedEx);
-        const owedP = parseFloat(l.owedPhilippe);
-        // For expenses where Philippe paid, Ex owes her share (owedEx)
-        // For assets where Ex keeps, she owes Philippe the buyback (owedPhilippe)
-        if (l.sourceType === "expense") {
-          return sum + owedE;
-        } else {
-          return sum + owedP;
-        }
-      }, 0);
+      .reduce((sum, l) => sum + parseFloat(l.owedPhilippe), 0);
     
     const totalPhilippeOwes = philippeOwesHer
       .filter((l) => !l.paidStatus)
-      .reduce((sum, l) => {
-        const owedE = parseFloat(l.owedEx);
-        const owedP = parseFloat(l.owedPhilippe);
-        // For expenses where Ex paid, Philippe owes his share (owedPhilippe)
-        // For assets where Philippe keeps, he owes Ex the buyback (owedEx)
-        if (l.sourceType === "expense") {
-          return sum + owedP;
-        } else {
-          return sum + owedE;
-        }
-      }, 0);
+      .reduce((sum, l) => sum + parseFloat(l.owedEx), 0);
     
     const netAmount = totalSheOwes - totalPhilippeOwes;
     const netDebtor = netAmount > 0 ? "EX" : netAmount < 0 ? "PHILIPPE" : null;
