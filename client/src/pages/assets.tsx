@@ -48,7 +48,12 @@ export default function AssetsPage() {
 
   const formatDate = (date: string | null) => {
     if (!date) return "—";
-    return new Date(date).toLocaleDateString("en-CA");
+    // Format as yyyy/mm/dd
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}/${month}/${day}`;
   };
 
   const formatCurrency = (amount: string | null) => {
