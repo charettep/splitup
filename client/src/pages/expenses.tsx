@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Upload, AlertTriangle, Eye, Edit2 } from "lucide-react";
+import { Plus, Upload, AlertTriangle, Eye, Edit2, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

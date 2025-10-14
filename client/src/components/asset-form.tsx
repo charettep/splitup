@@ -23,55 +23,55 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import {
-  insertExpenseSchema,
-  type InsertExpense,
-  type Expense,
-  EXPENSE_CATEGORIES,
+  insertAssetSchema,
+  type InsertAsset,
+  type Asset,
   type SplitPeriod,
 } from "@shared/schema";
 
-interface ExpenseFormProps {
-  expense?: Expense | null;
+interface AssetFormProps {
+  asset?: Asset | null;
   onSuccess?: () => void;
-  initialData?: Partial<InsertExpense>;
 }
 
-export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProps) {
+export function AssetForm({ asset, onSuccess }: AssetFormProps) {
   const { toast } = useToast();
 
   const { data: periods } = useQuery<SplitPeriod[]>({
     queryKey: ["/api/split-periods"],
   });
 
-  const form = useForm<InsertExpense>({
-    resolver: zodResolver(insertExpenseSchema),
+  const form = useForm<InsertAsset>({
+    resolver: zodResolver(insertAssetSchema),
     defaultValues: {
-      date: expense?.date || initialData?.date || "",
-      description: expense?.description || initialData?.description || "",
-      category: expense?.category || initialData?.category || "Other",
-      totalAmount: expense?.totalAmount || initialData?.totalAmount || "",
-      paidBy: (expense?.paidBy || initialData?.paidBy || "PHILIPPE") as "PHILIPPE" | "EX",
-      attachmentUrl: expense?.attachmentUrl || initialData?.attachmentUrl || "",
-      manualSharePhilippePct: expense?.manualSharePhilippePct || initialData?.manualSharePhilippePct || "",
-      manualShareExPct: expense?.manualShareExPct || initialData?.manualShareExPct || "",
+      name: asset?.name || "",
+      purchaseDate: asset?.purchaseDate || "",
+      purchasePrice: asset?.purchasePrice || "",
+      paidBy: (asset?.paidBy || "PHILIPPE") as "PHILIPPE" | "EX",
+      manualOriginalSharePhilippePct: asset?.manualOriginalSharePhilippePct || "",
+      manualOriginalShareExPct: asset?.manualOriginalShareExPct || "",
+      currentEstimatedValue: asset?.currentEstimatedValue || "",
+      valuationDate: asset?.valuationDate || "",
+      keptBy: (asset?.keptBy || undefined) as "PHILIPPE" | "EX" | undefined,
+      notes: asset?.notes || "",
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: InsertExpense) => {
-      if (expense) {
-        return apiRequest("PATCH", `/api/expenses/${expense.id}`, data);
+    mutationFn: async (data: InsertAsset) => {
+      if (asset) {
+        return apiRequest("PATCH", `/api/assets/${asset.id}`, data);
       }
-      return apiRequest("POST", "/api/expenses", data);
+      return apiRequest("POST", "/api/assets", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/ledger"] });
       toast({
-        title: expense ? "Expense updated" : "Expense created",
-        description: expense
-          ? "Expense has been updated successfully"
-          : "New expense has been created",
+        title: asset ? "Asset updated" : "Asset created",
+        description: asset
+          ? "Asset has been updated successfully"
+          : "New asset has been created",
       });
       onSuccess?.();
     },
@@ -84,17 +84,17 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
     },
   });
 
-  const onSubmit = (data: InsertExpense) => {
+  const onSubmit = (data: InsertAsset) => {
     createMutation.mutate(data);
   };
 
   // Check if date has matching split period
-  const selectedDate = form.watch("date");
+  const selectedDate = form.watch("purchaseDate");
   const hasMatchingPeriod = periods?.some((period) => {
-    const expenseDate = new Date(selectedDate);
+    const purchaseDate = new Date(selectedDate);
     const start = new Date(period.startDate);
     const end = period.endDate ? new Date(period.endDate) : null;
-    return expenseDate >= start && (!end || expenseDate <= end);
+    return purchaseDate >= start && (!end || purchaseDate <= end);
   });
 
   return (
@@ -102,38 +102,15 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="date"
+          name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Date</FormLabel>
-              <FormControl>
-                <Input
-                  type="date"
-                  {...field}
-                  data-testid="input-date"
-                />
-              </FormControl>
-              {selectedDate && !hasMatchingPeriod && (
-                <FormDescription className="text-warning">
-                  No matching split period found. Manual shares required.
-                </FormDescription>
-              )}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>Asset Name</FormLabel>
               <FormControl>
                 <Input
                   {...field}
-                  placeholder="e.g., Grocery shopping at Loblaws"
-                  data-testid="input-description"
+                  placeholder="e.g., Dishwasher, Couch, Car"
+                  data-testid="input-name"
                 />
               </FormControl>
               <FormMessage />
@@ -144,24 +121,22 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
         <div className="grid grid-cols-2 gap-3">
           <FormField
             control={form.control}
-            name="category"
+            name="purchaseDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger data-testid="select-category">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {EXPENSE_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormLabel>Purchase Date</FormLabel>
+                <FormControl>
+                  <Input
+                    type="date"
+                    {...field}
+                    data-testid="input-purchase-date"
+                  />
+                </FormControl>
+                {selectedDate && !hasMatchingPeriod && (
+                  <FormDescription className="text-warning text-xs">
+                    No matching split period
+                  </FormDescription>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -169,10 +144,10 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
 
           <FormField
             control={form.control}
-            name="totalAmount"
+            name="purchasePrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Amount (CAD)</FormLabel>
+                <FormLabel>Purchase Price</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -184,7 +159,7 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
                       min="0"
                       {...field}
                       className="pl-7 font-mono"
-                      data-testid="input-amount"
+                      data-testid="input-purchase-price"
                     />
                   </div>
                 </FormControl>
@@ -218,11 +193,11 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
 
         {selectedDate && !hasMatchingPeriod && (
           <div className="space-y-3 p-3 bg-muted/50 rounded-lg border">
-            <p className="text-sm font-medium">Manual Split Shares</p>
+            <p className="text-sm font-medium">Manual Original Shares</p>
             <div className="grid grid-cols-2 gap-3">
               <FormField
                 control={form.control}
-                name="manualSharePhilippePct"
+                name="manualOriginalSharePhilippePct"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Philippe %</FormLabel>
@@ -244,7 +219,7 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
               />
               <FormField
                 control={form.control}
-                name="manualShareExPct"
+                name="manualOriginalShareExPct"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Ex %</FormLabel>
@@ -268,6 +243,27 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
           </div>
         )}
 
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  value={field.value || ""}
+                  placeholder="Additional details about the asset"
+                  className="resize-none"
+                  rows={2}
+                  data-testid="input-notes"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="flex gap-2 justify-end pt-2">
           <Button
             type="submit"
@@ -275,12 +271,12 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
             data-testid="button-submit"
           >
             {createMutation.isPending
-              ? expense
+              ? asset
                 ? "Updating..."
                 : "Creating..."
-              : expense
-              ? "Update Expense"
-              : "Create Expense"}
+              : asset
+              ? "Update Asset"
+              : "Create Asset"}
           </Button>
         </div>
       </form>

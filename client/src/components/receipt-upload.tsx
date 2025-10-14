@@ -21,7 +21,8 @@ export function ReceiptUpload({ onSuccess }: ReceiptUploadProps) {
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       // Step 1: Get upload URL
-      const { uploadURL } = await apiRequest("POST", "/api/objects/upload", {});
+      const response = await apiRequest("POST", "/api/objects/upload", {}) as { uploadURL: string };
+      const { uploadURL } = response;
 
       // Step 2: Upload file to object storage
       await fetch(uploadURL, {
@@ -36,7 +37,7 @@ export function ReceiptUpload({ onSuccess }: ReceiptUploadProps) {
       const extractedData = await apiRequest("POST", "/api/ocr/extract", {
         fileUrl: uploadURL.split("?")[0], // Remove query params
         fileType: file.type,
-      });
+      }) as OCRExtractedData;
 
       return { uploadURL, extractedData };
     },
