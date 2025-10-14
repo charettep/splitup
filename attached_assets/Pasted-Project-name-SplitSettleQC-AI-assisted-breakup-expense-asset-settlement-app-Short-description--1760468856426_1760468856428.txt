@@ -1,0 +1,79 @@
+Project name: SplitSettleQC — AI-assisted breakup expense & asset settlement app
+
+Short description
+Build a simple web app that tracks shared expenses and jointly owned items for the purpose of settling finances after a separation. The app uses date-based income splits that change over time. It accepts receipts and bank statements (PDF / image), extracts data via OCR/AI, and computes who owes whom. Output: two tables (She owes Philippe / Philippe owes her) plus a net settlement.
+
+Primary goals
+1. Record every line as either an Expense or an Asset.
+2. Use the expense/asset date to resolve the applicable SplitPeriod (time window with percentage shares).
+3. Compute owed amounts per line using the resolved shares and bankers’ rounding to cents.
+4. Let users upload receipts/statements; run OCR to auto-extract date, amount, vendor, and line items. Allow manual correction.
+5. Allow assets to be valued today and compute buyback amounts based on original share at purchase date.
+6. Produce ledger rows for both expense reimbursements and asset buybacks. Allow marking rows as paid.
+
+Key data model (concise)
+- Person: {id, name} — two rows: Philippe, Ex
+- SplitPeriod: {id, start_date, end_date, share_philippe_pct, share_ex_pct, note}
+- Expense: {id, date, description, category, total_amount, paid_by (PHILIPPE|EX), attachment_url, created_at}
+- Asset: {id, name, purchase_date, purchase_price, paid_by, original_share_philippe_pct, current_estimated_value, valuation_date, kept_by (PHILIPPE|EX|null)}
+- OwedLine (computed ledger): {id, source_type (expense|asset), source_id, date, description, total_amount, owed_philippe, owed_ex, paid_status, notes}
+
+Behaviors and rules
+- Resolve split by Expense.date or Asset.purchase_date using the SplitPeriod covering that date. If none, mark unresolved and require user to supply share percentages.
+- For expenses:
+  owed_philippe = round_cents(total_amount * share_philippe_pct/100)
+  owed_ex = total_amount - owed_philippe
+  If paid_by=PHILIPPE then ex_reimburses = owed_ex; else philippe_reimburses = owed_philippe.
+- For assets kept by one party:
+  buyback_due = round_cents(current_estimated_value * original_share_of_other_party/100)
+  Create an OwedLine dated valuation_date. Ensure buyback <= current_estimated_value; any rounding remainder stays with kept party.
+- Rounding: bankers’ rounding to cents. Invariant: owed_philippe + owed_ex == total_amount.
+
+Uploads and AI/OCR
+- Upload file types: PDF, JPG, PNG. For each upload attempt:
+  1) Run OCR and extract date, vendor, total, currency, and line items when available.
+  2) Auto-create a draft Expense with extracted values.
+  3) Present editable draft to user for confirmation.
+- Allow bulk CSV import for expenses, split periods, and assets with preview step.
+
+UI pages (minimum)
+- Split Periods: list, add/edit, validate non-overlap, quick pick for common splits.
+- Expenses: upload, manual add/edit, attachment view, CSV import.
+- Assets: add, set valuation, compute buyback, mark kept.
+- Ledger: three tabs — She owes Philippe, Philippe owes her, Summary (totals and net). Filters: date range, category, paid_by, unresolved.
+- Export: CSV export per tab and combined audit CSV.
+
+CSV templates (columns)
+- split_periods.csv: start_date,end_date,share_philippe_pct,share_ex_pct,note
+- expenses.csv: date,description,category,total_amount,paid_by,attachment_url
+- assets.csv: name,purchase_date,purchase_price,paid_by,original_share_philippe_pct,current_estimated_value,valuation_date,kept_by,notes
+
+Acceptance criteria (what must work in first build)
+1. Create SplitPeriods and resolve them by date.
+2. Add expenses manually and from OCR; resolved owed amounts appear in the correct ledger table.
+3. Add assets and create buyback ledger rows from a valuation.
+4. Two ledger views show correct items and totals. Summary shows net and who pays whom.
+5. CSV import/export for data and ledger.
+6. Mark ledger lines as paid and reflect paid amounts in summary.
+7. All money values use CAD and bankers’ rounding.
+
+UX notes (simple)
+- Show unresolved expenses/asset purchases prominently with an edit action.
+- For each ledger row show: date, description, category, total, paid_by, applicable_split, you_owe, she_owes, attachment link, mark-paid.
+- Keep the UI minimal. Focus on correctness and clear audit trail.
+
+Privacy and storage
+- Local storage only. No external analytics.
+- Store attachments and database in the Repl filesystem or chosen storage provider.
+
+Example user story (flow)
+1. Upload grocery receipt PDF dated 2023-10-03 for $120 extracted by OCR.
+2. System resolves SplitPeriod for 2023-10-03 as 40% Philippe / 60% Ex.
+3. Expense created. Philippe owes 40% = $48. Row appears under “Philippe owes her.”
+4. Upload dishwasher asset (purchase 2023-07-01, paid_by=PHILIPPE, purchase_price=$1000). Original share resolved 60/40.
+5. User sets current_estimated_value $500 and marks kept_by=EX. System computes buyback due to Philippe = $300 and adds to “She owes Philippe.”
+
+Deliverable format you should build
+- A runnable Repl with data persistence, OCR integration, UI pages above, CSV import/export, and an admin-style ledger. Keep the first version focused on correctness of split and buyback logic, OCR-based draft creation, and CSV workflows.
+
+End of prompt.
