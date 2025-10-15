@@ -23,17 +23,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useSettlement } from "@/lib/settlementContext";
 
 export default function ExpensesPage() {
+  const { settlement, currentUserId, person1, person2 } = useSettlement();
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   const { data: expenses, isLoading } = useQuery<Expense[]>({
-    queryKey: ["/api/expenses"],
+    queryKey: ["/api/expenses", { settlementId: settlement.id }],
   });
 
   const handleEdit = (expense: Expense) => {
+    if (expense.ownerId !== currentUserId) {
+      return;
+    }
     setEditingExpense(expense);
     setIsFormDialogOpen(true);
   };
@@ -44,7 +49,6 @@ export default function ExpensesPage() {
   };
 
   const formatDate = (date: string) => {
-    // Format as yyyy/mm/dd
     const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -57,7 +61,7 @@ export default function ExpensesPage() {
   };
 
   const isUnresolved = (expense: Expense) => {
-    return !expense.manualSharePhilippePct && !expense.manualShareExPct;
+    return !expense.manualPerson1SharePct && !expense.manualPerson2SharePct;
   };
 
   if (isLoading) {
@@ -107,7 +111,10 @@ export default function ExpensesPage() {
                   Upload a receipt image or PDF. We'll extract the data automatically.
                 </DialogDescription>
               </DialogHeader>
-              <ReceiptUpload onSuccess={() => setIsUploadDialogOpen(false)} />
+              <ReceiptUpload
+                settlementId={settlement.id}
+                onSuccess={() => setIsUploadDialogOpen(false)}
+              />
             </DialogContent>
           </Dialog>
           <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
@@ -131,6 +138,7 @@ export default function ExpensesPage() {
               <ExpenseForm
                 expense={editingExpense}
                 onSuccess={handleCloseFormDialog}
+                settlementId={settlement.id}
               />
             </DialogContent>
           </Dialog>
@@ -197,6 +205,10 @@ export default function ExpensesPage() {
               <TableBody>
                 {sortedExpenses.map((expense) => {
                   const unresolved = isUnresolved(expense);
+                  const isPerson1Payer = expense.paidBy === "person1";
+                  const payerName = isPerson1Payer ? person1?.personName : person2?.personName || "Unknown";
+                  const canEdit = expense.ownerId === currentUserId;
+                  
                   return (
                     <TableRow
                       key={expense.id}
@@ -209,7 +221,7 @@ export default function ExpensesPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{expense.description}</span>
-                          {expense.attachmentUrl && (
+                          {(expense.receiptUrl || expense.documentUrl) && (
                             <Eye className="w-3.5 h-3.5 text-muted-foreground" />
                           )}
                         </div>
@@ -223,14 +235,8 @@ export default function ExpensesPage() {
                         {formatCurrency(expense.totalAmount)}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          className={
-                            expense.paidBy === "PHILIPPE"
-                              ? "bg-philippe/10 text-philippe border-philippe/20"
-                              : "bg-ex/10 text-ex border-ex/20"
-                          }
-                        >
-                          {expense.paidBy === "PHILIPPE" ? "Philippe" : "Ex"}
+                        <Badge variant="outline">
+                          {payerName}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -251,6 +257,7 @@ export default function ExpensesPage() {
                           size="icon"
                           className="h-8 w-8"
                           onClick={() => handleEdit(expense)}
+                          disabled={!canEdit}
                           data-testid={`button-edit-${expense.id}`}
                         >
                           <Edit2 className="w-3.5 h-3.5" />

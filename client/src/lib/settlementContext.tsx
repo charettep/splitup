@@ -17,6 +17,7 @@ interface SettlementContextValue {
   person2: SettlementParticipant | undefined;
   currentUserParticipant: SettlementParticipant | undefined;
   currentUserRole: "person1" | "person2" | null;
+  currentUserId: string;
   isCreator: boolean;
 }
 
@@ -112,6 +113,7 @@ export function SettlementProvider({ children }: { children: ReactNode }) {
         person2,
         currentUserParticipant,
         currentUserRole,
+        currentUserId: user?.id || "",
         isCreator,
       }}
     >

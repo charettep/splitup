@@ -12,7 +12,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -29,18 +28,21 @@ import {
   EXPENSE_CATEGORIES,
   type SplitPeriod,
 } from "@shared/schema";
+import { useSettlement } from "@/lib/settlementContext";
 
 interface ExpenseFormProps {
   expense?: Expense | null;
   onSuccess?: () => void;
   initialData?: Partial<InsertExpense>;
+  settlementId: string;
 }
 
-export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProps) {
+export function ExpenseForm({ expense, onSuccess, initialData, settlementId }: ExpenseFormProps) {
   const { toast } = useToast();
+  const { person1, person2 } = useSettlement();
 
   const { data: periods } = useQuery<SplitPeriod[]>({
-    queryKey: ["/api/split-periods"],
+    queryKey: ["/api/split-periods", { settlementId }],
   });
 
   const form = useForm<InsertExpense>({
@@ -50,10 +52,11 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
       description: expense?.description || initialData?.description || "",
       category: expense?.category || initialData?.category || "Other",
       totalAmount: expense?.totalAmount || initialData?.totalAmount || "",
-      paidBy: (expense?.paidBy || initialData?.paidBy || "PHILIPPE") as "PHILIPPE" | "EX",
-      attachmentUrl: expense?.attachmentUrl || initialData?.attachmentUrl || "",
-      manualSharePhilippePct: expense?.manualSharePhilippePct || initialData?.manualSharePhilippePct || "",
-      manualShareExPct: expense?.manualShareExPct || initialData?.manualShareExPct || "",
+      paidBy: (expense?.paidBy || initialData?.paidBy || "person1") as "person1" | "person2",
+      receiptUrl: expense?.receiptUrl || initialData?.receiptUrl || "",
+      documentUrl: expense?.documentUrl || initialData?.documentUrl || "",
+      manualPerson1SharePct: expense?.manualPerson1SharePct || initialData?.manualPerson1SharePct || "",
+      manualPerson2SharePct: expense?.manualPerson2SharePct || initialData?.manualPerson2SharePct || "",
     },
   });
 
@@ -62,10 +65,13 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
       if (expense) {
         return apiRequest("PATCH", `/api/expenses/${expense.id}`, data);
       }
-      return apiRequest("POST", "/api/expenses", data);
+      return apiRequest("POST", "/api/expenses", {
+        ...data,
+        settlementId,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/expenses", { settlementId }] });
       queryClient.invalidateQueries({ queryKey: ["/api/ledger"] });
       toast({
         title: expense ? "Expense updated" : "Expense created",
@@ -88,7 +94,6 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
     createMutation.mutate(data);
   };
 
-  // Check if date has matching split period
   const selectedDate = form.watch("date");
   const hasMatchingPeriod = periods?.some((period) => {
     const expenseDate = new Date(selectedDate);
@@ -200,15 +205,23 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
           render={({ field }) => (
             <FormItem>
               <FormLabel>Paid By</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value || undefined}>
                 <FormControl>
                   <SelectTrigger data-testid="select-paid-by">
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="PHILIPPE">Philippe</SelectItem>
-                  <SelectItem value="EX">Ex</SelectItem>
+                  {person1 && (
+                    <SelectItem value="person1">
+                      {person1.personName}
+                    </SelectItem>
+                  )}
+                  {person2 && (
+                    <SelectItem value="person2">
+                      {person2.personName}
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -222,10 +235,10 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
             <div className="grid grid-cols-2 gap-3">
               <FormField
                 control={form.control}
-                name="manualSharePhilippePct"
+                name="manualPerson1SharePct"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Philippe %</FormLabel>
+                    <FormLabel>{person1?.personName || "Person 1"} %</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -235,7 +248,7 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
                         {...field}
                         value={field.value || ""}
                         className="font-mono"
-                        data-testid="input-manual-philippe-pct"
+                        data-testid="input-manual-person1-pct"
                       />
                     </FormControl>
                     <FormMessage />
@@ -244,10 +257,10 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
               />
               <FormField
                 control={form.control}
-                name="manualShareExPct"
+                name="manualPerson2SharePct"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ex %</FormLabel>
+                    <FormLabel>{person2?.personName || "Person 2"} %</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -257,7 +270,7 @@ export function ExpenseForm({ expense, onSuccess, initialData }: ExpenseFormProp
                         {...field}
                         value={field.value || ""}
                         className="font-mono"
-                        data-testid="input-manual-ex-pct"
+                        data-testid="input-manual-person2-pct"
                       />
                     </FormControl>
                     <FormMessage />
