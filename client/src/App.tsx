@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
+import { SettlementProvider } from "@/lib/settlementContext";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -42,16 +43,88 @@ function LandingPage() {
   );
 }
 
-// Temporary home page (will be replaced with settlement selection)
-function HomePage() {
+// Dashboard - Settlement selection/creation
+function DashboardPage() {
   return (
-    <div className="container mx-auto py-12">
-      <h1 className="text-3xl font-bold mb-6">Your Settlements</h1>
-      <p className="text-muted-foreground mb-8">
-        Settlement selection page coming soon. For now, redirecting to split periods...
-      </p>
-      <Redirect to="/split-periods" />
+    <div className="container mx-auto py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Your Settlements</h1>
+            <p className="text-muted-foreground">
+              Manage your breakup settlements or create a new one
+            </p>
+          </div>
+          <a
+            href="/api/logout"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            data-testid="button-logout"
+          >
+            Logout
+          </a>
+        </div>
+        
+        <div className="text-center py-12 border-2 border-dashed rounded-lg">
+          <p className="text-muted-foreground mb-4">
+            Settlement management UI coming soon
+          </p>
+          <p className="text-sm text-muted-foreground">
+            For testing, navigate to: <code className="bg-muted px-2 py-1 rounded">/settle/[name]/split-periods</code>
+          </p>
+        </div>
+      </div>
     </div>
+  );
+}
+
+// Settlement Layout - Wraps all settlement-scoped routes
+function SettlementLayout({ children }: { children: React.ReactNode }) {
+  const style = {
+    "--sidebar-width": "16rem",
+    "--sidebar-width-icon": "3rem",
+  } as React.CSSProperties;
+
+  return (
+    <SettlementProvider>
+      <SidebarProvider style={style}>
+        <div className="flex h-screen w-full">
+          <AppSidebar />
+          <div className="flex flex-col flex-1">
+            <header className="flex items-center justify-between h-16 px-4 border-b gap-4 sticky top-0 bg-background z-10">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger data-testid="button-sidebar-toggle" />
+                <div className="hidden md:block">
+                  <h2 className="font-semibold">Splitup</h2>
+                  <p className="text-xs text-muted-foreground">
+                    AI-assisted breakup settlement
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <a
+                  href="/"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="link-dashboard"
+                >
+                  Dashboard
+                </a>
+                <a
+                  href="/api/logout"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="button-logout"
+                >
+                  Logout
+                </a>
+              </div>
+            </header>
+            <main className="flex-1 overflow-auto">
+              {children}
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
+    </SettlementProvider>
   );
 }
 
@@ -59,7 +132,6 @@ function HomePage() {
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -92,20 +164,6 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return <Component />;
 }
 
-function AuthenticatedRouter() {
-  return (
-    <Switch>
-      <Route path="/" component={() => <ProtectedRoute component={HomePage} />} />
-      <Route path="/split-periods" component={() => <ProtectedRoute component={SplitPeriodsPage} />} />
-      <Route path="/expenses" component={() => <ProtectedRoute component={ExpensesPage} />} />
-      <Route path="/assets" component={() => <ProtectedRoute component={AssetsPage} />} />
-      <Route path="/ledger" component={() => <ProtectedRoute component={LedgerPage} />} />
-      <Route path="/import-export" component={() => <ProtectedRoute component={ImportExportPage} />} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -120,48 +178,57 @@ function Router() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <LandingPage />;
-  }
-
-  // Authenticated users see the main app with sidebar
-  const style = {
-    "--sidebar-width": "16rem",
-    "--sidebar-width-icon": "3rem",
-  } as React.CSSProperties;
-
   return (
-    <SidebarProvider style={style}>
-      <div className="flex h-screen w-full">
-        <AppSidebar />
-        <div className="flex flex-col flex-1">
-          <header className="flex items-center justify-between h-16 px-4 border-b gap-4 sticky top-0 bg-background z-10">
-            <div className="flex items-center gap-3">
-              <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <div className="hidden md:block">
-                <h2 className="font-semibold">Splitup</h2>
-                <p className="text-xs text-muted-foreground">
-                  AI-assisted breakup settlement
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <a
-                href="/api/logout"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="button-logout"
-              >
-                Logout
-              </a>
-            </div>
-          </header>
-          <main className="flex-1 overflow-auto">
-            <AuthenticatedRouter />
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
+    <Switch>
+      {/* Landing page for logged-out users */}
+      {!isAuthenticated && <Route path="/" component={LandingPage} />}
+      
+      {/* Authenticated routes */}
+      {isAuthenticated && (
+        <>
+          {/* Dashboard - Settlement selection/creation */}
+          <Route path="/" component={DashboardPage} />
+          
+          {/* Settlement default redirect */}
+          <Route path="/settle/:settlementName">
+            {(params) => <Redirect to={`/settle/${params.settlementName}/split-periods`} />}
+          </Route>
+          
+          {/* Settlement-scoped routes */}
+          <Route path="/settle/:settlementName/split-periods">
+            <SettlementLayout>
+              <SplitPeriodsPage />
+            </SettlementLayout>
+          </Route>
+          
+          <Route path="/settle/:settlementName/expenses">
+            <SettlementLayout>
+              <ExpensesPage />
+            </SettlementLayout>
+          </Route>
+          
+          <Route path="/settle/:settlementName/assets">
+            <SettlementLayout>
+              <AssetsPage />
+            </SettlementLayout>
+          </Route>
+          
+          <Route path="/settle/:settlementName/ledger">
+            <SettlementLayout>
+              <LedgerPage />
+            </SettlementLayout>
+          </Route>
+          
+          <Route path="/settle/:settlementName/import-export">
+            <SettlementLayout>
+              <ImportExportPage />
+            </SettlementLayout>
+          </Route>
+        </>
+      )}
+      
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
