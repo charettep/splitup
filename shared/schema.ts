@@ -9,7 +9,7 @@ export const splitPeriods = pgTable("split_periods", {
   startDate: date("start_date").notNull(),
   endDate: date("end_date"), // null means ongoing
   sharePhilippePct: decimal("share_philippe_pct", { precision: 5, scale: 2 }).notNull(), // e.g., 40.00
-  shareExPct: decimal("share_ex_pct", { precision: 5, scale: 2 }).notNull(), // e.g., 60.00
+  shareValeriePct: decimal("share_valerie_pct", { precision: 5, scale: 2 }).notNull(), // e.g., 60.00
   note: text("note"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -21,7 +21,7 @@ export const insertSplitPeriodSchema = createInsertSchema(splitPeriods, {
     const num = parseFloat(val);
     return !isNaN(num) && num >= 0 && num <= 100;
   }, "Must be between 0 and 100"),
-  shareExPct: z.string().refine((val) => {
+  shareValeriePct: z.string().refine((val) => {
     const num = parseFloat(val);
     return !isNaN(num) && num >= 0 && num <= 100;
   }, "Must be between 0 and 100"),
@@ -37,11 +37,11 @@ export const expenses = pgTable("expenses", {
   description: text("description").notNull(),
   category: text("category").notNull(),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
-  paidBy: text("paid_by").notNull(), // PHILIPPE or EX
+  paidBy: text("paid_by").notNull(), // PHILIPPE or VALERIE
   attachmentUrl: text("attachment_url"),
   // Manual override if split period not found
   manualSharePhilippePct: decimal("manual_share_philippe_pct", { precision: 5, scale: 2 }),
-  manualShareExPct: decimal("manual_share_ex_pct", { precision: 5, scale: 2 }),
+  manualShareValeriePct: decimal("manual_share_valerie_pct", { precision: 5, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -51,7 +51,7 @@ export const insertExpenseSchema = createInsertSchema(expenses, {
     const num = parseFloat(val);
     return !isNaN(num) && num > 0;
   }, "Must be greater than 0"),
-  paidBy: z.enum(["PHILIPPE", "EX"]),
+  paidBy: z.enum(["PHILIPPE", "VALERIE"]),
   category: z.string().min(1, "Category is required"),
   description: z.string().min(1, "Description is required"),
 }).omit({ id: true, createdAt: true });
@@ -65,13 +65,13 @@ export const assets = pgTable("assets", {
   name: text("name").notNull(),
   purchaseDate: date("purchase_date").notNull(),
   purchasePrice: decimal("purchase_price", { precision: 10, scale: 2 }).notNull(),
-  paidBy: text("paid_by").notNull(), // PHILIPPE or EX
+  paidBy: text("paid_by").notNull(), // PHILIPPE or VALERIE
   // Manual override for original share if split period not found
   manualOriginalSharePhilippePct: decimal("manual_original_share_philippe_pct", { precision: 5, scale: 2 }),
-  manualOriginalShareExPct: decimal("manual_original_share_ex_pct", { precision: 5, scale: 2 }),
+  manualOriginalShareValeriePct: decimal("manual_original_share_valerie_pct", { precision: 5, scale: 2 }),
   currentEstimatedValue: decimal("current_estimated_value", { precision: 10, scale: 2 }),
   valuationDate: date("valuation_date"),
-  keptBy: text("kept_by"), // PHILIPPE, EX, or null
+  keptBy: text("kept_by"), // PHILIPPE, VALERIE, or null
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -82,8 +82,8 @@ export const insertAssetSchema = createInsertSchema(assets, {
     const num = parseFloat(val);
     return !isNaN(num) && num > 0;
   }, "Must be greater than 0"),
-  paidBy: z.enum(["PHILIPPE", "EX"]),
-  keptBy: z.enum(["PHILIPPE", "EX"]).optional().nullable(),
+  paidBy: z.enum(["PHILIPPE", "VALERIE"]),
+  keptBy: z.enum(["PHILIPPE", "VALERIE"]).optional().nullable(),
   name: z.string().min(1, "Name is required"),
 }).omit({ id: true, createdAt: true });
 
@@ -100,7 +100,7 @@ export const owedLines = pgTable("owed_lines", {
   category: text("category"), // only for expenses
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
   owedPhilippe: decimal("owed_philippe", { precision: 10, scale: 2 }).notNull(),
-  owedEx: decimal("owed_ex", { precision: 10, scale: 2 }).notNull(),
+  owedValerie: decimal("owed_valerie", { precision: 10, scale: 2 }).notNull(),
   paidStatus: boolean("paid_status").default(false).notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
