@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Edit2, Trash2, AlertTriangle, Calendar } from "lucide-react";
+import { Plus, Edit2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,15 +12,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 import { SplitPeriodForm } from "@/components/split-period-form";
+import { useSettlement } from "@/lib/settlementContext";
 import type { SplitPeriod } from "@shared/schema";
 
 export default function SplitPeriodsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPeriod, setEditingPeriod] = useState<SplitPeriod | null>(null);
+  const { settlement, person1, person2 } = useSettlement();
 
   const { data: periods, isLoading } = useQuery<SplitPeriod[]>({
-    queryKey: ["/api/split-periods"],
+    queryKey: ["/api/split-periods", { settlementId: settlement.id }],
   });
 
   const handleEdit = (period: SplitPeriod) => {
@@ -75,6 +79,9 @@ export default function SplitPeriodsPage() {
     return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
   });
 
+  const person1Name = person1?.personName || "Person 1";
+  const person2Name = person2?.personName || "Person 2";
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -107,6 +114,7 @@ export default function SplitPeriodsPage() {
             <SplitPeriodForm
               period={editingPeriod}
               onSuccess={handleCloseDialog}
+              settlementId={settlement.id}
             />
           </DialogContent>
         </Dialog>
@@ -132,9 +140,9 @@ export default function SplitPeriodsPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sortedPeriods.map((period) => {
             const isOngoing = !period.endDate;
-            const philippePct = parseFloat(period.sharePhilippePct);
-            const exPct = parseFloat(period.shareExPct);
-            const totalPct = philippePct + exPct;
+            const person1Pct = parseFloat(period.person1SharePct);
+            const person2Pct = parseFloat(period.person2SharePct);
+            const totalPct = person1Pct + person2Pct;
             const isInvalid = Math.abs(totalPct - 100) > 0.01;
 
             return (
@@ -181,22 +189,24 @@ export default function SplitPeriodsPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {isInvalid && (
-                    <div className="flex items-center gap-2 p-2 bg-warning/10 border border-warning/20 rounded text-xs">
-                      <AlertTriangle className="w-3.5 h-3.5 text-warning" />
-                      <span className="text-warning">Shares don't sum to 100%</span>
-                    </div>
+                    <Alert variant="destructive" className="py-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        Shares don't sum to 100%
+                      </AlertDescription>
+                    </Alert>
                   )}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Philippe</span>
+                      <span className="text-sm text-muted-foreground">{person1Name}</span>
                       <span className="font-mono font-semibold text-philippe">
-                        {philippePct.toFixed(2)}%
+                        {person1Pct.toFixed(2)}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Ex</span>
+                      <span className="text-sm text-muted-foreground">{person2Name}</span>
                       <span className="font-mono font-semibold text-ex">
-                        {exPct.toFixed(2)}%
+                        {person2Pct.toFixed(2)}%
                       </span>
                     </div>
                   </div>

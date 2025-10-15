@@ -1,13 +1,15 @@
-# Splitup - AI-Assisted Breakup Settlement Application
+# Splitup - Multi-User Collaborative AI-Assisted Breakup Settlement Application
 
 ## Project Overview
-Splitup is a comprehensive expense and asset settlement application designed for couples separating in Quebec, Canada. The app helps track shared expenses during a split period, manage assets with buyback calculations, and maintain a dual ledger showing who owes whom with automatic settlement calculations.
+Splitup is a collaborative expense and asset settlement application designed for couples separating in Quebec, Canada. The app enables two users to authenticate, create/join shared settlements via unique URLs, track expenses and assets with supporting documents, manage split periods, and view dual ledgers with automatic settlement calculations. Features include OCR receipt processing (OpenAI), user authentication (Replit Auth), and planned AI conversational agent for natural language interaction.
 
 ## Tech Stack
-- **Frontend:** React + TypeScript + Wouter routing + TanStack Query + Shadcn UI
-- **Backend:** Express + TypeScript + In-memory storage
+- **Frontend:** React + TypeScript + Wouter routing (URL-based settlement scoping) + TanStack Query + Shadcn UI
+- **Backend:** Express + TypeScript + PostgreSQL (Drizzle ORM) + Replit Auth
+- **Database:** PostgreSQL with Drizzle ORM for persistent storage
+- **Authentication:** Replit Auth (email/password + Google/GitHub/Apple/Twitter login)
 - **AI Integration:** OpenAI Vision API for OCR receipt processing
-- **Storage:** Google Cloud Storage for receipt attachments
+- **Storage:** Google Cloud Storage for receipt attachments & supporting documents
 - **Styling:** Tailwind CSS with custom design system
 
 ## Key Features

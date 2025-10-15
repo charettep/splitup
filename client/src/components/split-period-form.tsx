@@ -20,9 +20,10 @@ import { insertSplitPeriodSchema, type InsertSplitPeriod, type SplitPeriod } fro
 interface SplitPeriodFormProps {
   period?: SplitPeriod | null;
   onSuccess?: () => void;
+  settlementId: string;
 }
 
-export function SplitPeriodForm({ period, onSuccess }: SplitPeriodFormProps) {
+export function SplitPeriodForm({ period, onSuccess, settlementId }: SplitPeriodFormProps) {
   const { toast } = useToast();
 
   const form = useForm<InsertSplitPeriod>({
@@ -30,8 +31,8 @@ export function SplitPeriodForm({ period, onSuccess }: SplitPeriodFormProps) {
     defaultValues: {
       startDate: period?.startDate || "",
       endDate: period?.endDate || "",
-      sharePhilippePct: period?.sharePhilippePct || "50.00",
-      shareExPct: period?.shareExPct || "50.00",
+      person1SharePct: period?.person1SharePct || "50.00",
+      person2SharePct: period?.person2SharePct || "50.00",
       note: period?.note || "",
     },
   });
@@ -41,10 +42,14 @@ export function SplitPeriodForm({ period, onSuccess }: SplitPeriodFormProps) {
       if (period) {
         return apiRequest("PATCH", `/api/split-periods/${period.id}`, data);
       }
-      return apiRequest("POST", "/api/split-periods", data);
+      return apiRequest("POST", "/api/split-periods", {
+        ...data,
+        settlementId,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/split-periods"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/split-periods", { settlementId }] });
+      queryClient.invalidateQueries({ queryKey: ["/api/ledger"] });
       toast({
         title: period ? "Period updated" : "Period created",
         description: period
@@ -67,9 +72,9 @@ export function SplitPeriodForm({ period, onSuccess }: SplitPeriodFormProps) {
   };
 
   // Quick presets for common splits
-  const applyPreset = (philippe: number, ex: number) => {
-    form.setValue("sharePhilippePct", philippe.toFixed(2));
-    form.setValue("shareExPct", ex.toFixed(2));
+  const applyPreset = (person1: number, person2: number) => {
+    form.setValue("person1SharePct", person1.toFixed(2));
+    form.setValue("person2SharePct", person2.toFixed(2));
   };
 
   return (
@@ -151,10 +156,10 @@ export function SplitPeriodForm({ period, onSuccess }: SplitPeriodFormProps) {
         <div className="grid grid-cols-2 gap-3">
           <FormField
             control={form.control}
-            name="sharePhilippePct"
+            name="person1SharePct"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Philippe %</FormLabel>
+                <FormLabel>Person 1 %</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -162,7 +167,7 @@ export function SplitPeriodForm({ period, onSuccess }: SplitPeriodFormProps) {
                     min="0"
                     max="100"
                     {...field}
-                    data-testid="input-philippe-pct"
+                    data-testid="input-person1-pct"
                     className="font-mono"
                   />
                 </FormControl>
@@ -172,10 +177,10 @@ export function SplitPeriodForm({ period, onSuccess }: SplitPeriodFormProps) {
           />
           <FormField
             control={form.control}
-            name="shareExPct"
+            name="person2SharePct"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Ex %</FormLabel>
+                <FormLabel>Person 2 %</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -183,7 +188,7 @@ export function SplitPeriodForm({ period, onSuccess }: SplitPeriodFormProps) {
                     min="0"
                     max="100"
                     {...field}
-                    data-testid="input-ex-pct"
+                    data-testid="input-person2-pct"
                     className="font-mono"
                   />
                 </FormControl>
