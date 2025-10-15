@@ -47,7 +47,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-base font-semibold px-3 py-4">
-            SplitSettleQC
+            Splitup
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

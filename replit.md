@@ -1,7 +1,7 @@
-# SplitSettleQC - AI-Assisted Breakup Settlement Application
+# Splitup - AI-Assisted Breakup Settlement Application
 
 ## Project Overview
-SplitSettleQC is a comprehensive expense and asset settlement application designed for couples separating in Quebec, Canada. The app helps track shared expenses during a split period, manage assets with buyback calculations, and maintain a dual ledger showing who owes whom with automatic settlement calculations.
+Splitup is a comprehensive expense and asset settlement application designed for couples separating in Quebec, Canada. The app helps track shared expenses during a split period, manage assets with buyback calculations, and maintain a dual ledger showing who owes whom with automatic settlement calculations.
 
 ## Tech Stack
 - **Frontend:** React + TypeScript + Wouter routing + TanStack Query + Shadcn UI

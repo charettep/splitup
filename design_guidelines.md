@@ -1,4 +1,4 @@
-# SplitSettleQC - Design Guidelines
+# Splitup - Design Guidelines
 
 ## Design Approach: Professional Financial System
 
